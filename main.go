@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"log"
@@ -60,7 +61,7 @@ func DequeueJob(client *redis.Client) {
 
 	for {
 		jobJson, err := client.RPop(ctx, jobQueue).Result()
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			fmt.Println("Job queue is empty.")
 			break
 		} else if err != nil {
