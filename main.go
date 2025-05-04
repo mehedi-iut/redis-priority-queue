@@ -124,19 +124,6 @@ func main() {
 	// Start a worker
 	workerID := fmt.Sprintf("worker-%d", time.Now().UnixNano())
 	WorkerLoop(conn, workerID)
-	//// Create an enqueue a job
-	//job := NewJob("email", "Send email to mehedi", PriorityNormal)
-	//
-	//err := EnqueueJob(conn, job)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//dequeuedJob, err := DequeueJob(conn)
-	//if err != nil {
-	//	log.Fatal(err)
-	//} else {
-	//	processJob(*dequeuedJob)
-	//}
 }
 
 func EnqueueJob(client *redis.Client, job *Job) error {
@@ -180,11 +167,6 @@ func EnqueueJob(client *redis.Client, job *Job) error {
 		return fmt.Errorf("failed to add job to queue: %w", err)
 	}
 
-	//err = client.LPush(ctx, jobQueue, jobJSON).Err()
-	//if err != nil {
-	//	return fmt.Errorf("failed to push job: %w", err)
-	//}
-
 	// store job metadata in a redis hash for easy access
 	jobKey := fmt.Sprintf("job:%s", job.ID)
 	_, err = client.HSet(ctx, jobKey,
@@ -220,13 +202,6 @@ func DequeueJob(client *redis.Client) (*Job, error) {
 	}
 
 	jobJSON := result[0].Member.(string)
-
-	//jobJson, err := client.RPop(ctx, jobQueue).Result()
-	//if errors.Is(err, redis.Nil) {
-	//	return nil, fmt.Errorf("Job queue is empty.")
-	//} else if err != nil {
-	//	return nil, fmt.Errorf("failed to dequeue job: %w", err)
-	//}
 
 	// Deserialize job
 	var job Job
@@ -386,7 +361,10 @@ func updateJobStatus(client *redis.Client, job *Job, success bool) {
 			}
 
 			// Re-enqueue for retry
-			EnqueueJob(client, job)
+			err := EnqueueJob(client, job)
+			if err != nil {
+				return
+			}
 			fmt.Printf("Job %s scheduled for retry (%d/%d) with priority %d\n",
 				job.ID, job.RetryCount, job.MaxRetries, job.Priority)
 			return
