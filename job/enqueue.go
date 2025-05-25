@@ -9,9 +9,10 @@ import (
 )
 
 type Message struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
-	Age  string `json:"age"`
+	Id       int    `json:"id"`
+	Name     string `json:"name"`
+	Age      string `json:"age"`
+	Priority int    `json:"priority"`
 }
 
 const redisTimeOut = 5 * time.Second
@@ -24,8 +25,11 @@ func Enqueue(c *redis.Client, msg Message) error {
 		return err
 	}
 
-	//err = c.Set(ctx, "info", val, 0).Err()
-	err = c.RPush(ctx, "info", val).Err()
+	//err = c.RPush(ctx, "info", val).Err()
+	err = c.ZAdd(ctx, "info", redis.Z{
+		Score:  float64(msg.Priority),
+		Member: val,
+	}).Err()
 	if err != nil {
 		return err
 	}
