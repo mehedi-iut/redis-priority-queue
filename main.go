@@ -5,6 +5,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"redis-priority-queue/job"
 	"redis-priority-queue/worker"
+	"time"
 )
 
 func main() {
@@ -47,5 +48,9 @@ func main() {
 	}
 
 	w := worker.NewWorker("worker-1", rdb)
-	w.Run()
+	go w.Process() // Start in background with 'go'
+
+	time.Sleep(10 * time.Second)
+	fmt.Println("Stopping worker...")
+	w.Stop()
 }

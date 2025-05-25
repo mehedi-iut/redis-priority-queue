@@ -10,12 +10,14 @@ import (
 type Worker struct {
 	ID          string
 	RedisClient *redis.Client
+	quitChan    chan bool // New: channel to receive stop signal
 }
 
 func NewWorker(id string, redisClient *redis.Client) *Worker {
 	return &Worker{
 		ID:          id,
 		RedisClient: redisClient,
+		quitChan:    make(chan bool), // Create the channel
 	}
 }
 
@@ -24,7 +26,7 @@ func (w *Worker) Start() {
 }
 
 func (w *Worker) Stop() {
-	fmt.Println("Worker stopped")
+	w.quitChan <- true // Send "quit" signal
 }
 
 func (w *Worker) Run() {
@@ -35,20 +37,21 @@ func (w *Worker) Run() {
 
 func (w *Worker) Process() {
 	fmt.Println("Worker", w.ID, "started processing......")
-	//j, err := job.Dequeue(w.RedisClient)
-	//if err != nil {
-	//	fmt.Println("Error dequeueing:", err)
-	//	return
-	//}
-	//time.Sleep(10 * time.Second)
-	//fmt.Println(j)
 
 	for {
+		// Check if we should quit
+		select {
+		case <-w.quitChan: // If someone sent "quit" signal
+			fmt.Println("Worker", w.ID, "received quit signal")
+			return
+		default:
+			// no quit signal, continue processing
+		}
 		j, err := job.Dequeue(w.RedisClient)
 		if err != nil {
-			fmt.Println("Error dequeueing:", err)
+			fmt.Println("Error dequeue:", err)
 			time.Sleep(1 * time.Second) // Wait before try again
-			break
+			continue
 		}
 
 		// Process the job
