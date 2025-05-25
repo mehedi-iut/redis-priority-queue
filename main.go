@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"redis-priority-queue/job"
+	"redis-priority-queue/worker"
 )
 
 func main() {
@@ -45,14 +46,6 @@ func main() {
 		}
 	}
 
-	// Dequeue all messages
-	fmt.Println("\nDequeueing messages...")
-	for i := 0; i < len(messages); i++ {
-		val, err := job.Dequeue(rdb)
-		if err != nil {
-			fmt.Println("Error dequeueing:", err)
-			break
-		}
-		fmt.Println(val)
-	}
+	w := worker.NewWorker("worker-1", rdb)
+	w.Run()
 }
