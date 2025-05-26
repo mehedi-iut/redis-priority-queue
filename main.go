@@ -20,15 +20,15 @@ func main() {
 	messages := []job.Message{
 		{
 			Id:       1,
-			Name:     "John",
+			Name:     "Ibrahim",
 			Age:      "25",
-			Priority: 5,
+			Priority: 1,
 		},
 		{
 			Id:       2,
-			Name:     "Alice",
+			Name:     "Omar",
 			Age:      "28",
-			Priority: 3,
+			Priority: 2,
 		},
 		{
 			Id:       3,
@@ -47,10 +47,9 @@ func main() {
 		}
 	}
 
-	w := worker.NewWorker("worker-1", rdb)
-	go w.Process() // Start in background with 'go'
-
-	time.Sleep(10 * time.Second)
-	fmt.Println("Stopping worker...")
-	w.Stop()
+	// create pool with 3 workers
+	wp := worker.NewWorkerPool(3, rdb)
+	wp.Start()
+	time.Sleep(100 * time.Second)
+	wp.Stop()
 }
